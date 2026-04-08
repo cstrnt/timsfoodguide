@@ -1,8 +1,18 @@
 ---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+
+const featured = posts[0];
+const rest = posts.slice(1);
 ---
 
 <!doctype html>
@@ -13,37 +23,235 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 	<body>
 		<Header />
 		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
+			<div class="section-header">
+				<span class="section-label">Latest Reviews</span>
+				<hr />
+			</div>
+
+			{
+				featured && (
+					<a href={`/blog/${featured.id}/`} class="featured-post">
+						{featured.data.heroImage && (
+							<div class="featured-image">
+								<Image
+									src={featured.data.heroImage}
+									alt={featured.data.title}
+									width={720}
+									height={420}
+								/>
+							</div>
+						)}
+						<div class="featured-content">
+							{featured.data.place && (
+								<span class="post-place">{featured.data.place}</span>
+							)}
+							<h2 class="featured-title">{featured.data.title}</h2>
+							{featured.data.description && (
+								<p class="featured-description">{featured.data.description}</p>
+							)}
+							<div class="post-footer-meta">
+								{featured.data.ratings && (
+									<span class="compact-ratings">
+										Food {featured.data.ratings.food} &middot; Vibe{' '}
+										{featured.data.ratings.vibe} &middot; Value {featured.data.ratings.value}
+									</span>
+								)}
+								<span class="post-date">
+									<FormattedDate date={featured.data.pubDate} />
+								</span>
+							</div>
+						</div>
+					</a>
+				)
+			}
+
+			{
+				rest.length > 0 && (
+					<div class="posts-grid">
+						{rest.map((post) => (
+							<a href={`/blog/${post.id}/`} class="grid-card">
+								{post.data.heroImage && (
+									<Image
+										src={post.data.heroImage}
+										alt={post.data.title}
+										width={500}
+										height={300}
+									/>
+								)}
+								<div class="grid-card-body">
+									{post.data.place && <span class="grid-place">{post.data.place}</span>}
+									<h3 class="grid-title">{post.data.title}</h3>
+									<span class="grid-date">
+										<FormattedDate date={post.data.pubDate} />
+									</span>
+								</div>
+							</a>
+						))}
+					</div>
+				)
+			}
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.section-header {
+		margin-bottom: 2em;
+	}
+
+	.section-label {
+		display: block;
+		font-family: var(--sans);
+		font-size: 0.7em;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+		margin-bottom: 0.6em;
+	}
+
+	.featured-post {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2.5em;
+		align-items: start;
+		text-decoration: none;
+		color: inherit;
+		margin-bottom: 3em;
+		padding-bottom: 3em;
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.featured-post:hover .featured-title {
+		color: var(--accent);
+	}
+
+	.featured-image img {
+		display: block;
+		width: 100%;
+		height: 380px;
+		object-fit: cover;
+	}
+
+	.featured-content {
+		padding-top: 0.5em;
+	}
+
+	.post-place {
+		font-family: var(--sans);
+		font-size: 0.68em;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--accent);
+		display: block;
+		margin-bottom: 0.3em;
+	}
+
+	.featured-title {
+		font-family: var(--serif);
+		font-size: clamp(1.6em, 2.5vw, 2.2em);
+		font-weight: 700;
+		line-height: 1.2;
+		margin: 0 0 0.5em;
+		color: var(--ink);
+		transition: color 0.15s;
+	}
+
+	.featured-description {
+		font-style: italic;
+		color: var(--ink-muted);
+		font-size: 0.95em;
+		margin: 0 0 1em;
+		line-height: 1.55;
+	}
+
+	.post-footer-meta {
+		display: flex;
+		align-items: center;
+		gap: 1em;
+		flex-wrap: wrap;
+	}
+
+	.compact-ratings {
+		font-family: var(--sans);
+		font-size: 0.7em;
+		letter-spacing: 0.05em;
+		color: var(--ink-muted);
+	}
+
+	.post-date {
+		font-family: var(--sans);
+		font-size: 0.7em;
+		letter-spacing: 0.06em;
+		color: var(--ink-muted);
+		text-transform: uppercase;
+	}
+
+	.posts-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 2em;
+	}
+
+	.grid-card {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.grid-card:hover .grid-title {
+		color: var(--accent);
+	}
+
+	.grid-card img {
+		display: block;
+		width: 100%;
+		height: 220px;
+		object-fit: cover;
+		margin-bottom: 0.85em;
+	}
+
+	.grid-place {
+		display: block;
+		font-family: var(--sans);
+		font-size: 0.68em;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+		margin-bottom: 0.25em;
+	}
+
+	.grid-title {
+		font-family: var(--serif);
+		font-size: 1.15em;
+		font-weight: 700;
+		line-height: 1.3;
+		margin: 0 0 0.4em;
+		color: var(--ink);
+		transition: color 0.15s;
+	}
+
+	.grid-date {
+		font-family: var(--sans);
+		font-size: 0.68em;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+	}
+
+	@media (max-width: 720px) {
+		.featured-post {
+			grid-template-columns: 1fr;
+			gap: 1em;
+		}
+
+		.featured-image img {
+			height: 240px;
+		}
+
+		.posts-grid {
+			grid-template-columns: 1fr;
+			gap: 2em;
+		}
+	}
+</style>

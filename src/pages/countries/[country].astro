@@ -1,0 +1,144 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import PostCard from '../../components/PostCard.astro';
+import { SITE_TITLE } from '../../consts';
+import { groupByKey, sortedGroups, toSlug } from '../../lib/taxonomy';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog');
+	const byCountry = groupByKey(posts, 'country');
+	return [...byCountry.entries()].map(([country, countryPosts]) => ({
+		params: { country: toSlug(country) },
+		props: {
+			displayName: country,
+			posts: countryPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+		},
+	}));
+}
+
+const { displayName, posts } = Astro.props;
+
+// Group by city for sub-sections
+const byCity = groupByKey(posts, 'city');
+const cities = sortedGroups(byCity);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`${displayName} — ${SITE_TITLE}`}
+			description={`Restaurant reviews from ${displayName}.`}
+		/>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="section-header">
+				<a href="/countries" class="breadcrumb">Countries</a>
+				<hr />
+			</div>
+			<h1 class="page-title">{displayName}</h1>
+
+			{
+				cities.map(([city, cityPosts]) => (
+					<section class="city-section">
+						<div class="city-header">
+							<a href={`/cities/${toSlug(city)}`} class="city-name">
+								{city}
+							</a>
+							<span class="city-count">{cityPosts.length} {cityPosts.length === 1 ? 'review' : 'reviews'}</span>
+						</div>
+						<div class="posts-grid">
+							{cityPosts.map((post) => <PostCard post={post} />)}
+						</div>
+					</section>
+				))
+			}
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.section-header {
+		margin-bottom: 1.5em;
+	}
+
+	.breadcrumb {
+		display: block;
+		font-family: var(--sans);
+		font-size: 0.7em;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+		text-decoration: none;
+		margin-bottom: 0.6em;
+		transition: color 0.15s;
+	}
+
+	.breadcrumb:hover {
+		color: var(--accent);
+	}
+
+	.page-title {
+		font-family: var(--serif);
+		font-size: 2.8em;
+		margin: 0 0 1.5em;
+	}
+
+	.city-section {
+		margin-bottom: 3.5em;
+	}
+
+	.city-header {
+		display: flex;
+		align-items: baseline;
+		gap: 1em;
+		margin-bottom: 1.25em;
+		padding-bottom: 0.6em;
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.city-name {
+		font-family: var(--serif);
+		font-size: 1.4em;
+		font-weight: 700;
+		color: var(--ink);
+		text-decoration: none;
+		transition: color 0.15s;
+	}
+
+	.city-name:hover {
+		color: var(--accent);
+	}
+
+	.city-count {
+		font-family: var(--sans);
+		font-size: 0.72em;
+		letter-spacing: 0.08em;
+		color: var(--ink-muted);
+		text-transform: uppercase;
+	}
+
+	.posts-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 2em;
+	}
+
+	@media (max-width: 900px) {
+		.posts-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.posts-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

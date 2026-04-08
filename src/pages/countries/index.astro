@@ -1,0 +1,93 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+import { groupByKey, sortedGroups, toSlug } from '../../lib/taxonomy';
+
+const posts = await getCollection('blog');
+const byCountry = groupByKey(posts, 'country');
+const countries = sortedGroups(byCountry);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Countries — ${SITE_TITLE}`} description="Browse reviews by country." />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="section-header">
+				<span class="section-label">Countries</span>
+				<hr />
+			</div>
+			<ul class="taxonomy-list">
+				{
+					countries.map(([country, items]) => (
+						<li>
+							<a href={`/countries/${toSlug(country)}`} class="taxonomy-link">
+								<span class="taxonomy-name">{country}</span>
+								<span class="taxonomy-count">{items.length}</span>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.section-header {
+		margin-bottom: 2em;
+	}
+
+	.section-label {
+		display: block;
+		font-family: var(--sans);
+		font-size: 0.7em;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+		margin-bottom: 0.6em;
+	}
+
+	.taxonomy-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.taxonomy-list li {
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.taxonomy-link {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		padding: 0.9em 0;
+		text-decoration: none;
+		color: var(--ink);
+		transition: color 0.15s;
+	}
+
+	.taxonomy-link:hover {
+		color: var(--accent);
+	}
+
+	.taxonomy-name {
+		font-family: var(--serif);
+		font-size: 1.4em;
+	}
+
+	.taxonomy-count {
+		font-family: var(--sans);
+		font-size: 0.75em;
+		letter-spacing: 0.08em;
+		color: var(--ink-muted);
+	}
+</style>

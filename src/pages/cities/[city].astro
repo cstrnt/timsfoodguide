@@ -1,0 +1,94 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import PostCard from '../../components/PostCard.astro';
+import { SITE_TITLE } from '../../consts';
+import { groupByKey, toSlug } from '../../lib/taxonomy';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog');
+	const byCity = groupByKey(posts, 'city');
+	return [...byCity.entries()].map(([city, cityPosts]) => ({
+		params: { city: toSlug(city) },
+		props: {
+			displayName: city,
+			country: cityPosts[0].data.country,
+			posts: cityPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+		},
+	}));
+}
+
+const { displayName, country, posts } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`${displayName} — ${SITE_TITLE}`}
+			description={`Restaurant reviews from ${displayName}.`}
+		/>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="section-header">
+				<a href={`/countries/${toSlug(country)}`} class="breadcrumb">{country}</a>
+				<hr />
+			</div>
+			<h1 class="page-title">{displayName}</h1>
+			<div class="posts-grid">
+				{posts.map((post) => <PostCard post={post} />)}
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.section-header {
+		margin-bottom: 1.5em;
+	}
+
+	.breadcrumb {
+		display: block;
+		font-family: var(--sans);
+		font-size: 0.7em;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+		text-decoration: none;
+		margin-bottom: 0.6em;
+		transition: color 0.15s;
+	}
+
+	.breadcrumb:hover {
+		color: var(--accent);
+	}
+
+	.page-title {
+		font-family: var(--serif);
+		font-size: 2.8em;
+		margin: 0 0 1.25em;
+	}
+
+	.posts-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 2em;
+	}
+
+	@media (max-width: 900px) {
+		.posts-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.posts-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
